@@ -15,7 +15,7 @@ class User(Base):
     profile: Mapped["Profile"] = relationship(back_populates="user")
 
     def __str__(self):
-        return f"{self.__class__.__name__}(id={self.id}, username={self.username!r}"
+        return f"{self.__class__.__name__}(id={self.id}, username={self.username!r})"
 
     def __repr__(self):
         return str(self)
