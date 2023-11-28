@@ -113,37 +113,42 @@ async def get_profiles_with_users_and_users_whit_posts(session: AsyncSession):
         print('**' * 10)
 
 
+async def main_relations(session):
+    await create_user(session=session, username="Alex")
+    await create_user(session=session, username="Alice")
+    await create_user(session=session, username="Roman")
+    user_alex = await get_user_by_username(session=session, username="Alex")
+    user_roman = await get_user_by_username(session=session, username="Roman")
+
+    await create_profile(session=session, user_id=user_alex.id, first_name=user_alex.username)
+    await create_profile(
+        session=session,
+        user_id=user_roman.id,
+        first_name=user_roman.username,
+        last_name="White",
+    )
+    print()
+    await show_users_with_profiles(session=session)
+    await create_post(
+        session,
+        user_alex.id,
+        "SQLA 2.0",
+        "SQLA Joins",
+        "Hello world",
+    )
+    await create_post(
+        session,
+        user_roman.id,
+        "FastAPI first",
+        "FastAPI next 3.20",
+    )
+    await get_profiles_with_users_and_users_whit_posts(session=session)
+
+
 async def main():
     async with db_helper.session_factory() as session:
-        # await create_user(session=session, username="Alex")
-        # await create_user(session=session, username="Alice")
-        # await create_user(session=session, username="Roman")
-        # user_alex = await get_user_by_username(session=session, username="Alex")
-        # user_roman = await get_user_by_username(session=session, username="Roman")
-        #
-        # await create_profile(session=session, user_id=user_alex.id, first_name=user_alex.username)
-        # await create_profile(
-        #     session=session,
-        #     user_id=user_roman.id,
-        #     first_name=user_roman.username,
-        #     last_name="White",
-        # )
-        # print()
-        # await show_users_with_profiles(session=session)
-        # await create_post(
-        #     session,
-        #     user_alex.id,
-        #     "SQLA 2.0",
-        #     "SQLA Joins",
-        #     "Hello world",
-        # )
-        # await create_post(
-        #     session,
-        #     user_roman.id,
-        #     "FastAPI first",
-        #     "FastAPI next 3.20",
-        # )
-        await get_profiles_with_users_and_users_whit_posts(session=session)
+        # await main_relations(session=session)
+        pass
 
 
 if __name__ == "__main__":
