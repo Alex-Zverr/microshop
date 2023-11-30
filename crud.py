@@ -5,7 +5,7 @@ from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from core.models import db_helper, User, Profile, Post
+from core.models import db_helper, User, Profile, Post, Order, Product
 
 
 async def create_user(session: AsyncSession, username: str) -> User:
@@ -113,6 +113,63 @@ async def get_profiles_with_users_and_users_whit_posts(session: AsyncSession):
         print('**' * 10)
 
 
+async def create_order(
+        session: AsyncSession,
+        promocode: str | None = None,
+) -> Order:
+    order = Order(promocode=promocode)
+
+    session.add(order)
+    await session.commit()
+
+    return order
+
+
+async def create_product(
+        session: AsyncSession,
+        name: str,
+        description: str,
+        price: int,
+) -> Product:
+    product = Product(name=name, description=description, price=price)
+    session.add(product)
+    await session.commit()
+    return product
+
+
+async def demo_m2m(session: AsyncSession):
+    order_one = await create_order(session)
+    order_promo = await create_order(session, promocode='promo')
+
+    mouse = await create_product(session, 'Mouse', 'Great gaming mouse', price=123)
+    keyboard = await create_product(session, 'Keyboard', 'Great gaming keyboard', price=149)
+    display = await create_product(session, 'Display', 'Office display', price=299)
+
+    order_one = await session.scalar(
+        select(Order)
+        .where(Order.id == order_one.id)
+        .options(
+            selectinload(Order.products),
+        ),
+    )
+    order_promo = await session.scalar(
+        select(Order)
+        .where(Order.id == order_promo.id)
+        .options(
+            selectinload(Order.products),
+        ),
+    )
+
+    order_one.products.append(mouse)
+    order_one.products.append(keyboard)
+
+    # order_promo.products.append(keyboard)
+    # order_promo.products.append(display)
+    order_promo.products = [keyboard, display]
+
+    await session.commit()
+
+
 async def main_relations(session):
     await create_user(session=session, username="Alex")
     await create_user(session=session, username="Alice")
@@ -148,7 +205,7 @@ async def main_relations(session):
 async def main():
     async with db_helper.session_factory() as session:
         # await main_relations(session=session)
-        pass
+        await demo_m2m(session)
 
 
 if __name__ == "__main__":
