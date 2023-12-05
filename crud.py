@@ -137,7 +137,7 @@ async def create_product(
     return product
 
 
-async def demo_m2m(session: AsyncSession):
+async def create_orders_adn_products(session: AsyncSession):
     order_one = await create_order(session)
     order_promo = await create_order(session, promocode='promo')
 
@@ -168,6 +168,27 @@ async def demo_m2m(session: AsyncSession):
     order_promo.products = [keyboard, display]
 
     await session.commit()
+
+
+async def get_order_with_products(session: AsyncSession) -> list[Order]:
+    stmt = (
+        select(Order)
+        .options(
+            selectinload(Order.products),
+        )
+        .order_by(Order.id)
+    )
+    orders = await session.scalars(stmt)
+    return list(orders)
+
+
+async def demo_get_orders_with_products_through_secondary(session: AsyncSession):
+    orders = await get_order_with_products(session=session)
+    for order in orders:
+        print('--' * 10)
+        print(order.id, order.promocode, order.created_at)
+        for product in order.products:  # type: Product
+            print("-", product.id, product.price, product.name)
 
 
 async def main_relations(session):
@@ -204,8 +225,7 @@ async def main_relations(session):
 
 async def main():
     async with db_helper.session_factory() as session:
-        # await main_relations(session=session)
-        await demo_m2m(session)
+        await get_users_with_posts(session=session)
 
 
 if __name__ == "__main__":
