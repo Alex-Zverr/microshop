@@ -2,7 +2,7 @@ import secrets
 import uuid
 from typing import Annotated, Any
 from time import time
-from fastapi import APIRouter, Depends, HTTPException, status, Header, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Response, Cookie
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 router = APIRouter(prefix="/demo-auth", tags=['Demo Auth'])
@@ -95,8 +95,14 @@ def generate_session_id() -> str:
 
 
 def get_session_data(
-
-):
+    session_id: str = Cookie(alias=COOKIES_SESSION_ID_KEY),
+) -> dict:
+    if session_id not in COOKIES:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="not authenticated"
+        )
+    return COOKIES[session_id]
 
 
 @router.post('/login_cookie')
@@ -112,6 +118,27 @@ def login_set_cookie(
     response.set_cookie(COOKIES_SESSION_ID_KEY, session_id)
     return {"result": "ok"}
 
-@router.get("/check-cookie")
-def demo_auth_check_cookie():
-    pass
+
+@router.get("/check-cookie/")
+def demo_auth_check_cookie(
+    user_session_data: dict = Depends(get_session_data)
+):
+    username = user_session_data['username']
+    return {
+        "massage": f"Hello, {username}!",
+        **user_session_data,
+    }
+
+
+@router.get("/logout-cookie/")
+def demo_auth_check_cookie(
+    response: Response,
+    session_id: str = Cookie(alias=COOKIES_SESSION_ID_KEY),
+    user_session_data: dict = Depends(get_session_data)
+):
+    COOKIES.pop(session_id),
+    response.delete_cookie(COOKIES_SESSION_ID_KEY),
+    username = user_session_data["username"]
+    return {
+        "massage": f"Bye, {username}!"
+    }
