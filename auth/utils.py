@@ -21,8 +21,9 @@ def encode_jwt(
         expire = now + timedelta(minutes=expire_minutes)
     to_encode.update(
         exp=expire,
+        iat=now,
     )
-    return jwt.encode(payload, private_key, algorithm=algorithm)
+    return jwt.encode(to_encode, private_key, algorithm=algorithm)
 
 
 def decode_jwt(
@@ -30,7 +31,7 @@ def decode_jwt(
         public_key: str = settings.auth_jwt.public_key_path.read_text(),
         algorithm: str = settings.auth_jwt.algorithm,
 ):
-    return jwt.decode(token, public_key, algorithm=[algorithm])
+    return jwt.decode(token, public_key, algorithms=algorithm)
 
 
 def hash_password(
